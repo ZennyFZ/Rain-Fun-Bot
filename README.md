@@ -8,3 +8,5 @@ What can it do ?
 -Send random Neko image（=´∇｀=)
 
 That's all
+
+Rain Bot: https://steamcommunity.com/id/ThousandSwordRain/
