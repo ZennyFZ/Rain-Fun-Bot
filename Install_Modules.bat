@@ -1,1 +1,1 @@
-npm i --save steam-user steam-totp steamcommunity steamstore axios
+npm i --save steam-user steam-totp steamid steamcommunity steamstore axios fs child_process
