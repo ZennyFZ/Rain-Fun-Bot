@@ -7,6 +7,16 @@ What can it do ?
 
 -Send random Neko image（=´∇｀=)
 
+Admin Command:
+
+-Restart bot
+
+-block/unblock/remove a friend
+
+-send message to a ID
+
+-comment on a provided profile ID
+
 That's all
 
 Rain Bot: https://steamcommunity.com/id/ThousandSwordRain/
