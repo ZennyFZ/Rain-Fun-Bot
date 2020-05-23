@@ -32,7 +32,7 @@ Bot.on('loggedOn', () => {
   Bot.setPersona(BotConfig.Status)
   Bot.setUIMode(BotConfig.ui)
   console.log('Rain is online')
-  //Bot.gamesPlayed('Link Start!!')
+  Bot.gamesPlayed('Link Start!!')
 });
 
 Bot.on("error", function (e) {
