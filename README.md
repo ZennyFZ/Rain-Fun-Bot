@@ -9,8 +9,6 @@ What can it do ?
 
 Admin Command:
 
--Restart bot
-
 -block/unblock/remove a friend
 
 -send message to a ID
