@@ -1,4 +1,5 @@
-# Rain-Fun-Bot
+# Rain-Fun-Bot (obsolete)
+Note: i will fix if i have free time
 What can it do ?
 
 -Comment your custom message on your profile
