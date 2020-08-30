@@ -1,4 +1,4 @@
-const SteamUser = require('steam-user')
+﻿const SteamUser = require('steam-user')
       SteamTotp = require('steam-totp')
       SteamCommunity = require('steamcommunity')
       SteamStore = require('steamstore')
@@ -7,7 +7,10 @@ const SteamUser = require('steam-user')
       Axios = require('axios')
       Child_Process = require('child_process');
       BotConfig = require('./Setting/config.js')
+      RPSPath = require('./Setting/RockPaperScissor.js')
       UserDataPath = './Setting/UserData.json'
+      ScorePath = './Setting/Score.json'
+      LacmtPath = './Setting/lacmt.json'
       Bot = new SteamUser()
       Community = new SteamCommunity()
       Store = new SteamStore()
@@ -20,19 +23,36 @@ const SteamUser = require('steam-user')
       }
 
 var userData = JSON.parse(fs.readFileSync(UserDataPath, 'utf8'))
+    score = JSON.parse(fs.readFileSync(ScorePath, 'utf8'))
+    lacmt = JSON.parse(fs.readFileSync(LacmtPath, 'utf8'))
+    dt = new Date();
+    date = dt.getDate()+'-'+(dt.getMonth()+1)+'-'+dt.getFullYear();
+    time = dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds();
+    dateTime = '[' + date+' '+time + ']';
 
-if (BotConfig.AccountName && BotConfig.Password && BotConfig.SharedSecret) {
-  Bot.setOption("promptSteamGuardCode", false)
-  Bot.logOn(AccountDetails)
-} else {
-  console.log('Failed to login, please check your botconfig.js again');
+function doLogin() {
+  if (BotConfig.AccountName && BotConfig.Password && BotConfig.SharedSecret) {
+    Bot.setOption("promptSteamGuardCode", false)
+    Bot.logOn(AccountDetails)
+  } else {
+    console.log('Failed to login, please check your botconfig.js again');
+  }
 }
+
+function Refresh() {
+  setTimeout(function() {
+    Child_Process.exec('Restart.exe')
+  }, 3600000)
+}
+
+doLogin()
+Refresh()
 
 Bot.on('loggedOn', () => {
   Bot.setPersona(BotConfig.Status)
   Bot.setUIMode(BotConfig.ui)
   console.log('Rain is online')
-  Bot.gamesPlayed('Link Start!!')
+  //Bot.gamesPlayed('Link Start!!')
 });
 
 Bot.on("error", function (e) {
@@ -139,8 +159,10 @@ Bot.on('friendMessage', function(steamID, message) {
 
   function CommentError() {
     Bot.chatTyping(steamID)
-    console.log(err)
-    Bot.chatMessage(steamID, 'bot reach steam comment limit >.<')
+    Bot.chatMessage(steamID, 'i reach steam comment limit, i will restart myself to fix it.if after restart it`s still error then you need to wait until steam reset my limit >.<')
+    setTimeout(function() {
+      Child_Process.exec('Restart.exe')
+    }, 5000)
   }
 
   if (message.toLowerCase().startsWith('!comment')) {
@@ -244,7 +266,6 @@ Bot.on('friendMessage', function(steamID, message) {
       Bot.chatTyping(steamID)
       Bot.chatMessage(steamID, 'Owner: ' + msg)
       Bot.chatMessage(BotConfig.AdminID, 'Done!!!')
-      /* console.log(msgmerge + '\n' + sid + '\n' + msg) */
     }
     if (message.toLowerCase().startsWith('!block')) {
       Id = message.replace('!block', '')
@@ -316,40 +337,13 @@ Bot.on('friendMessage', function(steamID, message) {
       }
     }
     if (message.toLowerCase().startsWith('!restart')) {
-      Child_Process.exec("start " + BotConfig.RestartPath + "start " + BotConfig.StartBatch)
+      Child_Process.exec('Restart.exe')
       setTimeout(function(){
         process.exit(1)
       }, 5000)
     }
-    if (message.toLowerCase().startsWith('!acomment')) {
-      msgp1 = message.slice(0,9).trim()
-      msgp2 = message.replace('!acomment', '')
-      msgp3 = msgp2.slice(0,17).trim()
-      msgp4 = msgp2.slice(17)
-      msgmerge = msgp1 + msgp3 + msgp4
-      sid = msgmerge.slice(9,26)
-      msg = msgmerge.slice(26)
-      steamID = sid
-      Community.postUserComment(steamID, msg, (err) => {
-        if (err) {
-          return CommentError()
-        }
-        else {
-          steamID = new SteamID(steamID)
-          Bot.getPersonas([steamID], function(err, personas) {
-            if (err) {
-              Bot.chatTyping(BotConfig.AdminID)
-              Bot.chatMessage(BotConfig.AdminID, `failed to comment ><`)
-            }
-            else {
-              persona = personas[steamID.getSteamID64()];
-              uname = persona ? persona.player_name : ("[" + steamID.getSteamID64() + "]");
-              Bot.chatTyping(BotConfig.AdminID)
-              Bot.chatMessage(BotConfig.AdminID, `commented on ${uname}'s profile ! >.O`)
-            }
-          })
-        }
-      })
+    if (message.toLowerCase().startsWith('!shutdown')) {
+      process.exit(1)
     }
 } else if (steamID !== BotConfig.AdminID &&
     message.toLowerCase().startsWith('!send') ||
@@ -365,29 +359,241 @@ Bot.on('friendMessage', function(steamID, message) {
 
   async function NekoImage() {
   ImageUrl = await Axios.get('http://nekos.life/api/v2/img/neko')
-  data = ImageUrl.data
-  data2 = JSON.stringify(data)
-  datap1 = data2.slice(8)
-  datap2 = datap1.search('"')
-  data3 = datap1.slice(0,datap2)
-  Bot.chatMessage(steamID, data3)
+  data = ImageUrl.data.url
+  Bot.chatMessage(steamID, data)
+}
+
+ async function AnimalImage() {
+   animal = await Axios.get(`http://shibe.online/api/${animal}?count=1`)
+   animalimage = animal.data[0]
+   Bot.chatMessage(steamID, animalimage)
+ }
+
+ if (message.toLowerCase().startsWith('!emailcheck')) {
+   email = message.slice(11).trim()
+   Axios.post("https://digibody.avast.com/v1/web/leaks", {
+     "email": email
+   }).then(function(response) {
+     Respond = JSON.stringify(response.data)
+     if (Respond == `{"status":"ok","value":[]}`) {
+       Bot.chatMessage(steamID, 'You are safe. no source leak found at the moment')
+     } else {
+     var i
+     for (i = 0; ; i++) {
+     LeakSource = JSON.stringify(response.data.value[i].leak_info.title)
+     LeakSourceD = JSON.stringify(response.data.value[i].leak_info.description)
+     Bot.chatMessage(steamID, '====================' + '\n' +`Source Leak ${i+1}:` + '\n' + '+Source: ' + LeakSource + '\n' + '+Source Description: ' + LeakSourceD + '\n' + '‎‎‎')
+   }
+ }})
+}
+
+ async function Weather() {
+   await Axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${City}&appid=${BotConfig.WeatherAPI}&units=metric`).then(function(response) {
+     WStatus = response.data.weather[0].description
+     WTemp = response.data.main.temp
+     Country = response.data.sys.country
+     LocationName = response.data.name
+     Bot.chatMessage(steamID, 'Location: ' + LocationName + ' || ' + 'Country: ' + Country + '\n' + 'Weather Status: ' + WStatus + '\n' + 'Weather Temp: ' + WTemp + '°C')
+   }).catch(function(error) {
+     Bot.chatMessage(steamID, 'city not found.incorrect city format or city is not in database, please type it carefully again >.<')
+   })
+ }
+
+ if (message.toLowerCase().startsWith('!acomment')) {
+   fs.writeFile(LacmtPath, JSON.stringify(lacmt), (err) => {
+     if (err) console.error(err)
+   })
+   if (!lacmt[steamID]) lacmt[steamID] = {
+     Log: 0
+   }
+   if (lacmt[steamID].Log >= 1) {
+     msgp1 = message.slice(0,9).trim()
+     msgp2 = message.replace('!acomment', '')
+     msgp3 = msgp2.slice(0,17).trim()
+     msgp4 = msgp2.slice(17)
+     msgmerge = msgp1 + msgp3 + msgp4
+     sid = msgmerge.slice(9,26)
+     msg = msgmerge.slice(26)
+     uid = steamID
+     steamID = sid
+     Community.postUserComment(steamID, msg, (err) => {
+       if (err) {
+         return CommentError()
+       }
+       else {
+         steamID = new SteamID(steamID)
+         Bot.getPersonas([steamID], function(err, personas) {
+           if (err) {
+             Bot.chatTyping(BotConfig.AdminID)
+             Bot.chatMessage(BotConfig.AdminID, `failed to comment ><`)
+           }
+           else {
+             persona = personas[steamID.getSteamID64()];
+             uname = persona ? persona.player_name : ("[" + steamID.getSteamID64() + "]");
+             Bot.chatTyping(BotConfig.AdminID)
+             Bot.chatMessage(BotConfig.AdminID, `commented on ${uname}'s profile ! >.O`)
+             fs.appendFileSync('./Setting/acomment_Log.txt','\r\n' + dateTime + `-${name}(https://steamcommunity.com/profiles/${uid}) message:${msg} || To: ${uname}(https://steamcommunity.com/profiles/${steamID})`);
+             }
+           })
+         }
+       })
+     } else {
+       Bot.chatMessage(steamID, '[WARN] your message will be logged by using this command (prevent scam activities). you can use this command normally after this warn message. thanks for reading')
+       lacmt[steamID].Log++
+     }
+   }
+
+ if (message.toLowerCase().startsWith('!weather ')) {
+   City = message.slice(9)
+   return Weather()
 }
 
  if (message.toLowerCase().startsWith('!neko')) {
    return NekoImage()
  }
 
+ if (message.toLowerCase().startsWith('!animal')) {
+   animal = message.toLowerCase().slice(7).trim()
+   if (animal == 'dog' || animal == 'dogs') {
+     animal = 'shibes'
+     return AnimalImage()
+   } else {
+     if (animal == 'cat' || animal == 'bird') {
+       animal = animal + 's'
+       return AnimalImage()
+     }
+     if (animal == 'cats' || animal == 'birds') {
+         return AnimalImage()
+       }
+       else {
+         Bot.chatMessage(steamID, `${animal}. i dont support this one :(`)
+       }
+     }
+   }
+
+  //========================Rock Paper Scissor Game========================//
+
+  function Score() {
+    fs.writeFile(ScorePath, JSON.stringify(score), (err) => {
+      if (err) console.error(err)
+    })
+  }
+
+  function Rock() {
+    RPSg = ['Scissor - ' + RPSPath.LoseMessage,'Paper - ' + RPSPath.WinMessage,'Rock - ' + RPSPath.DrawMessage]
+    randomRPS = RPSg[Math.floor((Math.random()*RPSg.length))]
+    Bot.chatMessage(steamID, randomRPS)
+    if (randomRPS.startsWith('Scissor - ' + RPSPath.LoseMessage)) {
+      score[steamID].Win++
+      return Score()
+    }
+    if (randomRPS.startsWith('Paper - ' + RPSPath.WinMessage)) {
+      score[steamID].Lose++
+      return Score()
+    }
+    if (randomRPS.startsWith('Rock - ' + RPSPath.DrawMessage)) {
+      score[steamID].Draw++
+      return Score()
+    }
+  }
+
+  function Paper() {
+    RPSg = ['Scissor - ' + RPSPath.WinMessage,'Paper - ' + RPSPath.DrawMessage,'Rock - ' + RPSPath.LoseMessage]
+    randomRPS = RPSg[Math.floor((Math.random()*RPSg.length))]
+    Bot.chatMessage(steamID, randomRPS)
+    if (randomRPS.startsWith('Scissor - ' + RPSPath.WinMessage)) {
+      score[steamID].Lose++
+      return Score()
+    }
+    if (randomRPS.startsWith('Paper - ' + RPSPath.DrawMessage)) {
+      score[steamID].Draw++
+      return Score()
+    }
+    if (randomRPS.startsWith('Rock - ' + RPSPath.LoseMessage)) {
+      score[steamID].Win++
+      return Score()
+    }
+  }
+
+  function Scissor() {
+    RPSg = ['Scissor - ' + RPSPath.DrawMessage,'Paper - ' + RPSPath.LoseMessage,'Rock - ' + RPSPath.WinMessage]
+    randomRPS = RPSg[Math.floor((Math.random()*RPSg.length))]
+    Bot.chatMessage(steamID, randomRPS)
+    if (randomRPS.startsWith('Scissor - ' + RPSPath.DrawMessage)) {
+      score[steamID].Draw++
+      return Score()
+    }
+    if (randomRPS.startsWith('Paper - ' + RPSPath.LoseMessage)) {
+      score[steamID].Win++
+      return Score()
+    }
+    if (randomRPS.startsWith('Rock - ' + RPSPath.WinMessage)) {
+      score[steamID].Lose++
+      return Score()
+    }
+  }
+
+ if (message.toLowerCase().startsWith('!rps')) {
+   wit = message.toLowerCase().slice(4).trim()
+   if (wit == 'rock') {
+     if (!score[steamID]) score[steamID] = {
+       Win: 0,
+       Lose: 0,
+       Draw: 0
+     }
+     return Rock()
+   }
+   if (wit == 'paper') {
+     if (!score[steamID]) score[steamID] = {
+       Win: 0,
+       Lose: 0,
+       Draw: 0
+     }
+     return Paper()
+   }
+   if (wit == 'scissor') {
+     if (!score[steamID]) score[steamID] = {
+       Win: 0,
+       Lose: 0,
+       Draw: 0
+     }
+     return Scissor()
+   }
+   if (wit == 'score') {
+     if (!score[steamID]) {
+       Bot.chatMessage(steamID, 'you dont play with me first so you dont have any scores O.O')
+     } else {
+       WinScore = score[steamID].Win
+       LoseScore = score[steamID].Lose
+       DrawScore = score[steamID].Draw
+       Tt = RPSPath.BotTalk
+       TTalk = Tt[Math.floor((Math.random()*Tt.length))]
+       if (WinScore < LoseScore) {
+         Bot.chatMessage(steamID, `-Your total result of Rock Paper Scissor Game- \n --------------------- \n WinScore: ${WinScore} \n LoseScore: ${LoseScore} \n DrawScore: ${DrawScore} \n --------------------- \n Bot: ${TTalk}`)
+       } else {
+         Bot.chatMessage(steamID, `-Your total result of Rock Paper Scissor Game- \n --------------------- \n WinScore: ${WinScore} \n LoseScore: ${LoseScore} \n DrawScore: ${DrawScore}`)
+       }
+     }
+   }
+   else { Bot.chatMessage(steamID, 'whattt is that thing ? O.O')}
+ }
+
+  //========================Rock Paper Scissor Game========================//
+
  if (message.toLowerCase().startsWith('!hentai')) {
    Bot.chatMessage(steamID, 'Baka! Pervert! Reported and Logged your message as a proof (^=˃ᆺ˂)!..... haha just kidding, pls forgive o(=´∇｀=)o.')
- }
+ } // should we add nsfw?
 
 else {
   Er = BotConfig.CommandError
   ErrorRespond = Er[Math.floor((Math.random()*Er.length))]
   if  (!message.toLowerCase().startsWith('!chat') &&
+      (!message.toLowerCase().startsWith('!emailcheck')) &&
       (!message.toLowerCase().startsWith('!cmt6x6')) &&
       (!message.toLowerCase().startsWith('!comment')) &&
       (!message.toLowerCase().startsWith('!neko')) &&
+      (!message.toLowerCase().startsWith('!animal')) &&
+      (!message.toLowerCase().startsWith('!weather')) &&
       (!message.toLowerCase().startsWith('!hentai')) &&
       (!message.toLowerCase().startsWith('!help')) &&
       (!message.toLowerCase().startsWith('!addlicense')) &&
@@ -397,8 +603,10 @@ else {
       (!message.toLowerCase().startsWith('!block')) &&
       (!message.toLowerCase().startsWith('!unblock')) &&
       (!message.toLowerCase().startsWith('!acomment')) &&
+      (!message.toLowerCase().startsWith('!rps')) &&
       (!message.toLowerCase().startsWith('!remove')) &&
       (!message.toLowerCase().startsWith('!restart')) &&
+      (!message.toLowerCase().startsWith('!shutdown')) &&
       (!message.toLowerCase().startsWith('!redeemwallet'))) {
   Bot.chatMessage(steamID, ErrorRespond)
 }}
