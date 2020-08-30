@@ -27,4 +27,6 @@ Admin Command:
 
 That's all
 
+Note:
+-Why VirusTotal says Restart.exe is a malware ? A: False positive .File is created by AutoIT, you can check au3 file
 Rain Bot: https://steamcommunity.com/id/ThousandSwordRain/
