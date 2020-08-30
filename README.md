@@ -1,4 +1,4 @@
-# Rain-Fun-Bot (obsolete)
+# Rain-Fun-Bot
 
 What can it do ?
 
