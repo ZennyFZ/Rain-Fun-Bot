@@ -1,5 +1,7 @@
 # Rain-Fun-Bot
 
+Note: No longer maintain comment command. Use it at your risk 
+
 What can it do ?
 
 -Comment your custom message on your profile
