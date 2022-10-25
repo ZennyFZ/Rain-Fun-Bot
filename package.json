@@ -16,7 +16,7 @@
   "author": "Zenny",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "chai": "^4.3.6",
     "child_process": "^1.0.2",
     "discord.js": "^12.5.3",
